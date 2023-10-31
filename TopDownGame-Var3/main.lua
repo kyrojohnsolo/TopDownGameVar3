@@ -13,6 +13,7 @@ function love.load() -- this function loads everything when game starts
     player.speed = 180 -- creates initial character speed value.
     
     zombies = {} -- create global zombies table. function spawnZombie() creates and adds zombies to this table.
+    bullets = {} -- create global bullets table. function spawnBullet() creates and adds zombies to this table.
 end
 
 function love.update(dt) -- this is the "game loop" that runs at 60FPS
@@ -55,6 +56,28 @@ function love.update(dt) -- this is the "game loop" that runs at 60FPS
             end
         end
     end
+    --[[
+        **BULLET DIRECTION**
+        this loops goes through the bullets table and gives them the direction and speed they should go.
+        This uses the same logic as the zombie with cosine and sine.
+        we multiply that by the speed.
+    ]]
+    for i,b in ipairs(bullets) do
+        b.x = b.x + (math.cos(b.direction) * b.speed*dt)
+        b.y = b.y + (math.sin(b.direction) * b.speed*dt)
+    end
+
+    --[[
+        **REMOVEING BULLETS WHEN LEAVING THE SCREEN**
+        this for loop iterates through the number of bullets of the table starting from the bottom
+        the if statement checks the bullet position, if it goes beyond the screen it is removed from the table.
+    ]]
+    for i=#bullets, 1, -1 do
+        local b = bullets[i]
+        if b.x < 0 or b.y < 0 or b.x > love.graphics.getWidth() or b.y > love.graphics.getHeight() then
+            table.remove(bullets, i)
+        end
+    end
 end
 
 function love.draw() -- this function handles drawing the graphics.
@@ -79,11 +102,27 @@ function love.draw() -- this function handles drawing the graphics.
     for i,z in ipairs(zombies) do
         love.graphics.draw(sprites.zombie, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.zombie:getWidth()/2, sprites.zombie:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
     end
+    --[[
+        this loops goes through the bullets table and draws them to the screen
+        setting the sx and sy parameter as .5 will scale down the bullet size.
+        rather then put in a hardcoded value, :getWidth() and :getHeight() are being used on the sprite. This centers the sprite.
+    ]]
+    for i,b in ipairs(bullets) do
+        love.graphics.draw(sprites.bullet, b.x, b.y, nil, .5, .5, sprites.bullet:getWidth()/2, sprites.bullet:getHeight()/2)
+    end
 end
 
 function love.keypressed(key)
     if key == "space" then
         spawnZombie()
+    end
+end
+--[[
+    this activates the bullets when mouse 1 is clicked.
+]]
+function love.mousepressed(x, y, button)
+    if button == 1 then
+        spawnBullet()
     end
 end
 
@@ -116,6 +155,18 @@ function spawnZombie()
     zombie.speed = 140 -- assigns the zombie speed
     table.insert(zombies, zombie) -- adds the local "zombie" to the global "zombies" table.
 
+end
+
+--[[
+    this function creates the bullet and assigns the bullet to the global "bullets" table
+]]
+function spawnBullet()
+    local bullet = {} -- creates local bullets table
+    bullet.x = player.x -- assigns position x to player location
+    bullet.y = player.y -- assigns position y to player location 
+    bullet.speed = 500 -- assings the bullet speed
+    bullet.direction = playerMouseAngle() -- uses the player mouse angle for the direction of the bullet will go
+    table.insert(bullets, bullet) -- inserts bullet into global bullets table.
 end
 
 --[[
