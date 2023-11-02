@@ -1,4 +1,4 @@
---Lesson Complete!
+--Lesson Complete! Have also completed extra lessons and added the crosshair from the previous lesson.
 
 function love.load() -- this function loads everything when game starts
     math.randomseed(os.time())
@@ -6,12 +6,15 @@ function love.load() -- this function loads everything when game starts
     sprites.background = love.graphics.newImage('sprites/background.png') -- adds the background sprite
     sprites.bullet = love.graphics.newImage('sprites/bullet.png') -- adds the bullet sprite
     sprites.player = love.graphics.newImage('sprites/player.png') -- adds the player sprite
+    sprites.crosshairs = love.graphics.newImage('sprites/crosshairs.png') -- adds the crosshair sprite
     sprites.zombie = love.graphics.newImage('sprites/zombie.png') -- adds the zombie sprite
 
     player = {} -- creates table for player data to be stored
     player.x = love.graphics.getWidth() / 2 -- assigns starting player x positon to 1/2 the screen width (center)
     player.y = love.graphics.getHeight() / 2 -- assigns the starting player y position to the screen height (center)
     player.speed = 180 -- creates initial character speed value.
+    player.injured = false -- creates a player injured status and is set to false
+    player.injuredSpeed = 270 -- sets a injured speed for the player.
     
     myFont = love.graphics.newFont(30)
     
@@ -22,27 +25,35 @@ function love.load() -- this function loads everything when game starts
     score = 0 -- score is initally set to 0
     maxTime = 2 -- maxTime is used for zombie timer.
     timer = maxTime -- timer is used for zombie timer.
+    love.mouse.setVisible(false) -- makes the mouse no longer visible.
 end
 
 function love.update(dt) -- this is the "game loop" that runs at 60FPS
     if gameState == 2 then
+        local moveSpeed = player.speed -- creates a local variable within the update function to control speed
+        --[[
+            this if statement will adjust the moveSpeed to the injureSpeed when the player is injured
+        ]]
+        if player.injured then
+            moveSpeed = player.injuredSpeed
+        end
     --[[
         ** PLAYER MOVEMENT **
         The code below handles the player movement using the love.keyboard.isDown() function
-        To compensate for framerate, player.speed is multiplied by dt. So if the framerate changes, the speed will adjust as needed.
+        To compensate for framerate, moveSpeed is multiplied by dt. So if the framerate changes, the speed will adjust as needed.
         additional and is added to if statement to prevent user from moving off the screen.
     ]]
     if love.keyboard.isDown("d") and player.x < love.graphics.getWidth() then -- if statement checks if user is pressing "d" (right) and moves character
-        player.x = player.x + player.speed*dt
+        player.x = player.x + moveSpeed*dt
     end
     if love.keyboard.isDown("a") and player.x > 0 then -- if statement checks if user is pressing "a" (left) and moves character
-        player.x = player.x - player.speed*dt
+        player.x = player.x - moveSpeed*dt
     end
     if love.keyboard.isDown("w") and player.y > 0 then -- if statement checks if user is pressing "w" (up) and moves character
-        player.y = player.y - player.speed*dt
+        player.y = player.y - moveSpeed*dt
     end
     if love.keyboard.isDown("s") and player.y < love.graphics.getHeight() then -- if statement checks if user is pressing "s" (down) and moves character
-        player.y = player.y + player.speed*dt
+        player.y = player.y + moveSpeed*dt
     end
 end
 
@@ -60,14 +71,26 @@ end
             ** COLLISION  DETECTION **
             Here we use the distance between formula to do collision detection between the player and zombies
                 if the distance is less then a certain amount, we use a for loop to loop through our zombie table and set the value to nil deleting them
-        ]]
+        ]]   
         if distanceBetween(z.x, z.y, player.x, player.y) < 30 then
+            --[[
+                if else statement that checks the players injured status.
+                if not injured, the injured status is set to true and the colliding zombie is destroyed.
+                if the player is injured, the game is over.
+            ]]
+            if player.injured == false then
+                player.injured = true
+                z.dead = true
+            else
+        
             for i,z in ipairs(zombies) do
                 zombies[i] = nil
                 gameState = 1
+                player.injured = false
                 player.x = love.graphics.getWidth() / 2 
                 player.y = love.graphics.getHeight() / 2
             end
+        end
         end
     end
     --[[
@@ -165,6 +188,10 @@ function love.draw() -- this function handles drawing the graphics.
         both nil values are for the x and y sprite scale. we aren't changing those so nil is being used.
         rather then put in a hardcoded value, :getWidth() and :getHeight() are being used on the sprite. This centers the sprite.
     ]]
+    -- Checks if player is injured. If true the color of the player is changed to red.
+    if player.injured then
+        love.graphics.setColor(1,0,0)
+    end
     love.graphics.draw(sprites.player, player.x, player.y, playerMouseAngle(), nil, nil, sprites.player:getWidth()/2, sprites.player:getHeight()/2) -- draws the player sprite
 
     --[[
@@ -175,6 +202,7 @@ function love.draw() -- this function handles drawing the graphics.
         rather then put in a hardcoded value, :getWidth() and :getHeight() are being used on the sprite. This centers the sprite.
 
     ]]
+    love.graphics.setColor(1,1,1)
     for i,z in ipairs(zombies) do
         love.graphics.draw(sprites.zombie, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.zombie:getWidth()/2, sprites.zombie:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
     end
@@ -186,13 +214,19 @@ function love.draw() -- this function handles drawing the graphics.
     for i,b in ipairs(bullets) do
         love.graphics.draw(sprites.bullet, b.x, b.y, nil, .5, .5, sprites.bullet:getWidth()/2, sprites.bullet:getHeight()/2)
     end
+    -- this draws the crosshair sprite, and assigns the position to the mouseX and mouseY position.
+    --  also, you need to subtract the PNG size to correct for the offset position of the PNG
+    love.graphics.draw(sprites.crosshairs, love.mouse.getX()-20, love.mouse.getY()-20, nil, .75, .75)   
 end
 
+--[[ **DEBUGGING, JUST LETS YOU SPAWN ZOMBIES WITH SPACEBAR**
 function love.keypressed(key)
     if key == "space" then
         spawnZombie()
     end
 end
+]]
+
 --[[
     this activates the bullets when mouse 1 is clicked.
     bullets will only fire when gameState = 2
