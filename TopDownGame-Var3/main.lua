@@ -8,6 +8,7 @@ function love.load() -- this function loads everything when game starts
     sprites.player = love.graphics.newImage('sprites/player.png') -- adds the player sprite
     sprites.crosshairs = love.graphics.newImage('sprites/crosshairs.png') -- adds the crosshair sprite
     sprites.zombie = love.graphics.newImage('sprites/zombie.png') -- adds the zombie sprite
+    sprites.target = love.graphics.newImage('sprites/target.png') -- adds the zombie sprite
 
     player = {} -- creates table for player data to be stored
     player.x = love.graphics.getWidth() / 2 -- assigns starting player x positon to 1/2 the screen width (center)
@@ -19,6 +20,7 @@ function love.load() -- this function loads everything when game starts
     myFont = love.graphics.newFont(30)
     
     zombies = {} -- create global zombies table. function spawnZombie() creates and adds zombies to this table.
+    targets = {}
     bullets = {} -- create global bullets table. function spawnBullet() creates and adds zombies to this table.
 
     gameState = 1 -- gameState 1 is the mainmenu, gameState 2 is when user is playing the game
@@ -85,6 +87,41 @@ end
         
             for i,z in ipairs(zombies) do
                 zombies[i] = nil
+                for j,b in ipairs(targets) do
+                    targets[j] = nil
+                end
+                gameState = 1
+                player.injured = false
+                player.x = love.graphics.getWidth() / 2 
+                player.y = love.graphics.getHeight() / 2
+            end
+        end
+        end
+    end
+    for i,z in ipairs(targets) do
+        z.x = z.x + (math.cos(zombiePlayerAngle(z)) * z.speed*dt)
+        z.y = z.y + (math.sin(zombiePlayerAngle(z)) * z.speed*dt)
+        --[[
+            ** COLLISION  DETECTION **
+            Here we use the distance between formula to do collision detection between the player and zombies
+                if the distance is less then a certain amount, we use a for loop to loop through our zombie table and set the value to nil deleting them
+        ]]   
+        if distanceBetween(z.x, z.y, player.x, player.y) < 30 then
+            --[[
+                if else statement that checks the players injured status.
+                if not injured, the injured status is set to true and the colliding zombie is destroyed.
+                if the player is injured, the game is over.
+            ]]
+            if player.injured == false then
+                player.injured = true
+                z.dead = true
+            else
+        
+            for i,z in ipairs(targets) do
+                targets[i] = nil
+                for j,b in ipairs(zombies) do
+                    zombies[j] = nil
+                end
                 gameState = 1
                 player.injured = false
                 player.x = love.graphics.getWidth() / 2 
@@ -129,6 +166,15 @@ end
             end
         end
     end
+    for i,z in ipairs(targets) do
+        for j,b in ipairs(bullets) do
+            if distanceBetween(z.x, z.y, b.x, b.y) < 20 then
+                z.dead = true
+                b.dead = true
+                score = score + 1
+            end
+        end
+    end
     --[[
         **REMOVE DEAD ZOMBIES**
         The following for loop checks the dead status of all zombies.
@@ -138,6 +184,12 @@ end
         local z = zombies[i]
         if z.dead == true then
             table.remove(zombies, i)
+        end
+    end
+    for i=#targets, 1, -1 do
+        local z = targets[i]
+        if z.dead == true then
+            table.remove(targets, i)
         end
     end
     --[[
@@ -206,6 +258,9 @@ function love.draw() -- this function handles drawing the graphics.
     for i,z in ipairs(zombies) do
         love.graphics.draw(sprites.zombie, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.zombie:getWidth()/2, sprites.zombie:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
     end
+    for i,z in ipairs(targets) do
+        love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+    end
     --[[
         this loops goes through the bullets table and draws them to the screen
         setting the sx and sy parameter as .5 will scale down the bullet size.
@@ -219,13 +274,19 @@ function love.draw() -- this function handles drawing the graphics.
     love.graphics.draw(sprites.crosshairs, love.mouse.getX()-20, love.mouse.getY()-20, nil, .75, .75)   
 end
 
---[[ **DEBUGGING, JUST LETS YOU SPAWN ZOMBIES WITH SPACEBAR**
+
 function love.keypressed(key)
-    if key == "space" then
+    if key == "1" then
         spawnZombie()
     end
 end
-]]
+
+function love.keypressed(key)
+    if key == "2" then
+        spawnTarget()
+    end
+end
+
 
 --[[
     this activates the bullets when mouse 1 is clicked.
@@ -264,38 +325,70 @@ end
 --[[
     This function creates the zombie and assigns the zombie to the global "zombies" table.
 ]]
-function spawnZombie()
-    local zombie = {} -- creates local zombie variable
-    zombie.x = 0 -- creates x position variable
-    zombie.y = 0 -- creates y position variable
-    zombie.speed = 140 -- assigns the zombie speed
-    zombie.dead = false -- when zombie collides with bullet, dead will be set to true and the zombie is removed.
 
-    --[[
-        **RANDOM ZOMBIE PLACEMENT**
-        Goal here is to have zombies walk in from random spot off the screen.
-        side variable gets a random number 1-4 which represents each side of the screen.
-        1 = left, 2 = right, 3 = top, 4 = bottom
+    function spawnZombie()
+        local zombie = {} -- creates local zombie variable
+        zombie.x = 0 -- creates x position variable
+        zombie.y = 0 -- creates y position variable
+        zombie.speed = 140 -- assigns the zombie speed
+        zombie.dead = false -- when zombie collides with bullet, dead will be set to true and the zombie is removed.
 
-    ]]
-    local side = math.random(1,4)
-    if side == 1 then
-        zombie.x = -30
-        zombie.y = math.random(0, love.graphics.getHeight())
-    elseif side == 2 then
-        zombie.x = love.graphics.getWidth() + 30
-        zombie.y = math.random(0, love.graphics.getHeight())
-    elseif side == 3 then
-        zombie.x = math.random(0, love.graphics.getWidth())
-        zombie.y = -30
-    elseif side == 4 then
-        zombie.x = math.random(0, love.graphics.getWidth())
-        zombie.y = love.graphics.getHeight() + 30
+        --[[
+            **RANDOM ZOMBIE PLACEMENT**
+            Goal here is to have zombies walk in from random spot off the screen.
+            side variable gets a random number 1-4 which represents each side of the screen.
+            1 = left, 2 = right, 3 = top, 4 = bottom
+
+        ]]
+        local side = math.random(1,4)
+        if side == 1 then
+            zombie.x = -30
+            zombie.y = math.random(0, love.graphics.getHeight())
+        elseif side == 2 then
+            zombie.x = love.graphics.getWidth() + 30
+            zombie.y = math.random(0, love.graphics.getHeight())
+        elseif side == 3 then
+            zombie.x = math.random(0, love.graphics.getWidth())
+            zombie.y = -30
+        elseif side == 4 then
+            zombie.x = math.random(0, love.graphics.getWidth())
+            zombie.y = love.graphics.getHeight() + 30
+        end
+
+        table.insert(zombies, zombie) -- adds the local "zombie" to the global "zombies" table.
     end
 
-    table.insert(zombies, zombie) -- adds the local "zombie" to the global "zombies" table.
+    function spawnTarget()
+        local target = {} -- creates local zombie variable
+        target.x = 0 -- creates x position variable
+        target.y = 0 -- creates y position variable
+        target.speed = 140 -- assigns the zombie speed
+        target.dead = false -- when zombie collides with bullet, dead will be set to true and the zombie is removed.
 
-end
+        --[[
+            **RANDOM ZOMBIE PLACEMENT**
+            Goal here is to have zombies walk in from random spot off the screen.
+            side variable gets a random number 1-4 which represents each side of the screen.
+            1 = left, 2 = right, 3 = top, 4 = bottom
+
+        ]]
+        local side = math.random(1,4)
+        if side == 1 then
+            target.x = -30
+            target.y = math.random(0, love.graphics.getHeight())
+        elseif side == 2 then
+            target.x = love.graphics.getWidth() + 30
+            target.y = math.random(0, love.graphics.getHeight())
+        elseif side == 3 then
+            target.x = math.random(0, love.graphics.getWidth())
+            target.y = -30
+        elseif side == 4 then
+            target.x = math.random(0, love.graphics.getWidth())
+            target.y = love.graphics.getHeight() + 30
+        end
+
+        table.insert(targets, target) -- adds the local "zombie" to the global "zombies" table.
+    end
 
 --[[
     this function creates the bullet and assigns the bullet to the global "bullets" table
