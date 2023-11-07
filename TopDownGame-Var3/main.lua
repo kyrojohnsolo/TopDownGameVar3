@@ -168,10 +168,13 @@ end
     end
     for i,z in ipairs(targets) do
         for j,b in ipairs(bullets) do
-            if distanceBetween(z.x, z.y, b.x, b.y) < 20 then
+            if distanceBetween(z.x, z.y, b.x, b.y) < 20 and z.injured == false then
+                z.injured = true
+                b.dead = true
+            elseif distanceBetween(z.x, z.y, b.x, b.y) < 20 and z.injured == true then
                 z.dead = true
                 b.dead = true
-                score = score + 1
+                score = score + 2
             end
         end
     end
@@ -211,7 +214,7 @@ end
     if gameState == 2 then
         timer = timer - dt
         if timer <= 0 then
-            spawnZombie()
+            monsterSelector()
             maxTime = 0.95 * maxTime
             timer = maxTime
         end
@@ -259,13 +262,20 @@ function love.draw() -- this function handles drawing the graphics.
         love.graphics.draw(sprites.zombie, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.zombie:getWidth()/2, sprites.zombie:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
     end
     for i,z in ipairs(targets) do
-        love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+        if z.injured == true then
+            love.graphics.setColor(1,0,0)
+            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+        else
+            love.graphics.setColor(1,1,1)
+            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+        end
     end
     --[[
         this loops goes through the bullets table and draws them to the screen
         setting the sx and sy parameter as .5 will scale down the bullet size.
         rather then put in a hardcoded value, :getWidth() and :getHeight() are being used on the sprite. This centers the sprite.
     ]]
+    love.graphics.setColor(1,1,1)
     for i,b in ipairs(bullets) do
         love.graphics.draw(sprites.bullet, b.x, b.y, nil, .5, .5, sprites.bullet:getWidth()/2, sprites.bullet:getHeight()/2)
     end
@@ -326,6 +336,15 @@ end
     This function creates the zombie and assigns the zombie to the global "zombies" table.
 ]]
 
+function monsterSelector()
+    monsterSelection = math.random(1,2)
+    if monsterSelection == 1 then
+        spawnZombie()
+    else
+        spawnTarget()
+    end
+end
+
     function spawnZombie()
         local zombie = {} -- creates local zombie variable
         zombie.x = 0 -- creates x position variable
@@ -364,6 +383,7 @@ end
         target.y = 0 -- creates y position variable
         target.speed = 140 -- assigns the zombie speed
         target.dead = false -- when zombie collides with bullet, dead will be set to true and the zombie is removed.
+        target.injured = false
 
         --[[
             **RANDOM ZOMBIE PLACEMENT**
