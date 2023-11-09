@@ -74,3 +74,17 @@ function drawBullets()
         love.graphics.draw(sprites.bullet, b.x, b.y, nil, .5, .5, sprites.bullet:getWidth()/2, sprites.bullet:getHeight()/2)
     end
 end
+
+
+--[[
+    this function creates the bullet and assigns the bullet to the global "bullets" table
+]]
+function spawnBullet()
+    local bullet = {} -- creates local bullets table
+    bullet.x = player.x -- assigns position x to player location
+    bullet.y = player.y -- assigns position y to player location 
+    bullet.speed = 500 -- assings the bullet speed
+    bullet.direction = playerMouseAngle() -- uses the player mouse angle for the direction of the bullet will go
+    bullet.dead = false -- when bullets collide with zombies, dead will be set to true and bullet is removed
+    table.insert(bullets, bullet) -- inserts bullet into global bullets table.
+end

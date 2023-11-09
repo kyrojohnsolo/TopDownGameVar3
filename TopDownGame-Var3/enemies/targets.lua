@@ -46,10 +46,10 @@ function drawTargets()
     for i,z in ipairs(targets) do
         if z.injured == true then
             love.graphics.setColor(1,0,0)
-            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), .5, .5, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
         else
             love.graphics.setColor(1,1,1)
-            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), nil, nil, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
+            love.graphics.draw(sprites.target, z.x, z.y, zombiePlayerAngle(z), .5, .5, sprites.target:getWidth()/2, sprites.target:getHeight()/2 ) -- draws zombies, "z" == individual zombie.
         end
     end
 end
