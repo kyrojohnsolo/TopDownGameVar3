@@ -11,6 +11,7 @@ function love.load() -- this function loads everything when game starts
     love.mouse.setVisible(false) -- makes the mouse no longer visible.
     require ('enemies/zombies')
     require ('enemies/targets')
+    require ('enemies/skull')
     require ('dabrain/bullets')
     require ('player')
     require('dabrain/monsterTimer')
@@ -23,6 +24,8 @@ function love.update(dt) -- this is the "game loop" that runs at 60FPS
     zombiesUpdate(dt)    
     -- insert targets update function here
     targetsUpdate(dt)
+    -- insert skull logic here
+    skullsUpdate(dt)
     -- insert bullet logic here
     hitWithBullets(dt)
     -- insert monsterTimer logic here
@@ -47,6 +50,7 @@ function love.draw() -- this function handles drawing the graphics.
     drawPlayer()
     drawZombies()
     drawTargets()
+    drawSkulls()
     love.graphics.setColor(1,1,1)
     drawBullets()
     -- this draws the crosshair sprite, and assigns the position to the mouseX and mouseY position.
@@ -64,6 +68,12 @@ end
 function love.keypressed(key)
     if key == "2" then
         spawnTarget()
+    end
+end
+
+function love.keypressed(key)
+    if key == "3" then
+        spawnSkull()
     end
 end
 

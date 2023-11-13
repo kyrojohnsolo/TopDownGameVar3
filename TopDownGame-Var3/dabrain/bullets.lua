@@ -50,6 +50,18 @@ function hitWithBullets(dt)
             end
         end
     end
+    for i,z in ipairs(skulls) do
+        for j,b in ipairs(bullets) do
+            if distanceBetween(z.x, z.y, b.x, b.y) < 20 and z.health > 0 then                
+                z.health = z.health - 1
+                b.dead = true
+            elseif distanceBetween(z.x, z.y, b.x, b.y) < 20 and z.health <= 0 then
+                z.dead = true
+                b.dead = true
+                score = score + 1
+            end
+        end
+    end
     --[[
         **REMOVE DEAD BULLETS**
         The following for loop checks the dead status of all bullets.
